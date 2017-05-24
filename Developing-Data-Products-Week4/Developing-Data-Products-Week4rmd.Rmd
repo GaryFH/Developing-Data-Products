@@ -9,27 +9,52 @@ output: ioslides_presentation
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-## R Markdown
+## Find best 8 regressors
 
-This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
-
-## Slide with Bullets
-
-- Bullet 1
-- Bullet 2
-- Bullet 3
-
-## Slide with R Output
-
-```{r cars, echo = TRUE}
-summary(cars)
+```{r}
+library(dplyr)
+data(mtcars)
+FourLowestPvalue<-function(x,y) {
+         x1<-x[,-1]
+        NumOfRegressors<-ncol(x1)
+       if(NumOfRegressors<4) stop("there are less than 4 regressors")
+                pval<-numeric(NumOfRegressors)
+                AdjR<-numeric(NumOfRegressors)
+              for(i in seq_len(NumOfRegressors)) {
+                fit<-lm(y~x1[,i])
+                s<-summary(fit)
+                pval[i]<-s$coefficients[2,4]
+                AdjR[i]<-s$adj.r.squared
+                        #print(names(s))
+                        #print(s)
+                        #print(pval)
+                        #regname<-names(x1)
+                        #print(regname)
+              }
+                print(class(pval))
+  LowToHighPvalTop4 <- order(pval)
+  LowToHighPvalTop4<- LowToHighPvalTop4[1:4]
+  xLowPval<-x1[,(LowToHighPvalTop4)]
+ Regressor_lowest<-names(xLowPval)
+  #print(LowToHighPvalTop4)
+  #print(names(xLowPval))
+  #print(a1)
+ AdjustedRSquared<-round(AdjR[LowToHighPvalTop4],4)
+  Pvalues<-signif(pval[LowToHighPvalTop4],4)
+  table(Regressor_lowest,AdjustedRSquared,Pvalues)
+}
+x<-mtcars
+y<-mtcars
+a1<-FourLowestPvalue(x,y[,1])
+a2<-tbl_df(a1)
+a2$Pvalues<-as.numeric(a2$Pvalues)
+a2$AdjustedRSquared<-as.numeric(a2$AdjustedRSquared)
+a3<-filter(a2,n>0)
+a4<-select(a3,-n)
+a4<-arrange(a4,Pvalues)
+a5<-as.matrix(a4)
+rownames(a5)<-rep("",nrow(a5))
+print(a5,quote = F)
 ```
 
-## Slide with Plot
-
-```{r pressure}
-plot(pressure)
-```
 
