@@ -9,52 +9,107 @@ output: ioslides_presentation
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-## Find best 8 regressors
+## Find best regressors
 
 ```{r}
+library(caret)
 library(dplyr)
-data(mtcars)
-FourLowestPvalue<-function(x,y) {
-         x1<-x[,-1]
-        NumOfRegressors<-ncol(x1)
-       if(NumOfRegressors<4) stop("there are less than 4 regressors")
+
+BestFitVar<-function(x,y,z) {
+         
+         
+## Remove near zero and mostly NA variables - Near zero only works if all variables are numeric!
+
+                        ## nza<-nearZeroVar(x) - 
+                        ## x<-x[,-nza]
+        mostNA<-sapply(x, function(x) mean(is.na(x)))>=.95
+        x<-x[,mostNA==F]
+
+## Remove dependent variable from potential regressors                
+        x1<-x[,-1]
+        
+## Insure that the number of good regressors wanted does not exceed the number available
+        
+                NumOfRegressors<-ncol(x1)
+            if(NumOfRegressors<y) stop("there are less than (y) regressors")
                 pval<-numeric(NumOfRegressors)
                 AdjR<-numeric(NumOfRegressors)
-              for(i in seq_len(NumOfRegressors)) {
-                fit<-lm(y~x1[,i])
+## Find best regressors (those with lowest P-values)
+
+            for(i in seq_len(NumOfRegressors)) {
+                fit<-lm(x[,1]~x1[,i])
                 s<-summary(fit)
                 pval[i]<-s$coefficients[2,4]
                 AdjR[i]<-s$adj.r.squared
                         #print(names(s))
                         #print(s)
+                        #print(class(pval))
                         #print(pval)
                         #regname<-names(x1)
                         #print(regname)
               }
-                print(class(pval))
-  LowToHighPvalTop4 <- order(pval)
-  LowToHighPvalTop4<- LowToHighPvalTop4[1:4]
-  xLowPval<-x1[,(LowToHighPvalTop4)]
- Regressor_lowest<-names(xLowPval)
-  #print(LowToHighPvalTop4)
-  #print(names(xLowPval))
-  #print(a1)
- AdjustedRSquared<-round(AdjR[LowToHighPvalTop4],4)
-  Pvalues<-signif(pval[LowToHighPvalTop4],4)
-  table(Regressor_lowest,AdjustedRSquared,Pvalues)
+## make new data.frame by removing extra regressors 
+        if(z==1){criteria<-AdjR}
+        if(!z==1){criteria<-pval} 
+                
+        LowToHigh <- order(criteria)
+        LowToHigh<- LowToHigh[1:y]
+        xLowval<-x1[,(LowToHigh)]
+        Regressor_lowest<-names(xLowval)
+                        #print(LowToHigh)
+                        #print(names(xLow))
+                        #print(a1)
+                
+ #prepare and print
+                                
+        AdjustedRSquared<-round(AdjR[LowToHigh],4)
+        Pvalues<-signif(pval[LowToHigh],4)
+                a1<-table(Regressor_lowest,AdjustedRSquared,Pvalues)
+                a2<-tbl_df(a1)
+                a2$Pvalues<-as.numeric(a2$Pvalues)
+                a2$AdjustedRSquared<-as.numeric(a2$AdjustedRSquared)
+                a3<-filter(a2,n>0)
+                a4<-select(a3,-n)
+                ##a4<-arrange(a4,Pvalues)
+                a5<-as.matrix(a4)
+                print(a5,quote = F)
+                rownames(a5)<-rep("",nrow(a5))
+        ##
 }
-x<-mtcars
-y<-mtcars
-a1<-FourLowestPvalue(x,y[,1])
-a2<-tbl_df(a1)
-a2$Pvalues<-as.numeric(a2$Pvalues)
-a2$AdjustedRSquared<-as.numeric(a2$AdjustedRSquared)
-a3<-filter(a2,n>0)
-a4<-select(a3,-n)
-a4<-arrange(a4,Pvalues)
-a5<-as.matrix(a4)
-rownames(a5)<-rep("",nrow(a5))
-print(a5,quote = F)
+
+
+BestFitVar(mtcars,4,2)
+BestFitVar(mtcars,4,1)
 ```
+
+## Example using diamonds database (part of ggplot2)
+
+###Put dependent variable in first column and remove unwanted variables (x,y,z)
+```{r setup}
+library(ggplot2)
+library(dplyr)
+d1<-tbl_df(diamonds)
+d2<-select(d1,price,carat:table) ## price first column
+d2<-as.data.frame(d2)
+
+###next put in function x=database,y=numberof best variables you want to find
+BestFitVar(d2,4,1)
+```
+## Example using airquality database - no prep is required
+```{r}
+BestFitVar(airquality,4,1)
+BestFitVar(airquality,4,2)
+```
+
+
+##``
+## Example using state database
+
+```{r}
+state<-as.data.frame(state.x77)
+BestFitVar(state,5,1)
+BestFitVar(state,5,2)
+```
+
 
 
