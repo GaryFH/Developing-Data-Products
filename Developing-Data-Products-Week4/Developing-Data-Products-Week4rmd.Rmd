@@ -113,6 +113,7 @@ BestFitVar(airquality,4,1)##Adusted R squared criteria
 ```
 
 
+
 ##``
 ## Example using state database
 ###Put dependent variable in first column 
