@@ -1,20 +1,23 @@
 ---
 title: "Developing-Data-Products-Week4rmd"
 author: "GaryFH"
-date: "May 22, 2017"
-output: ioslides_presentation
+date: "May 26, 2017"
+output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+```##{r setup, include=FALSE}
+##knitr::opts_chunk$set(echo = FALSE)
 ```
 
-## Find best regressors
+## Find best regressors set up function called "BestFitVar" (an x,y,z function) - note for this to work the data must be in a data.frame format and the dependent variable needs to be the first column.
+
+### x= database,   y= number of best regressors you want to find,  z= if 1 then Adusted R squared is criteria for choosing the best regressors - any other value for z means Pvalue is the criteria method
+
+```{r ,warning=FALSE,message=FALSE}
+library(caret);library(dplyr);library(ggplot2)
+```
 
 ```{r}
-library(caret)
-library(dplyr)
-
 BestFitVar<-function(x,y,z) {
          
          
@@ -76,39 +79,48 @@ BestFitVar<-function(x,y,z) {
                 rownames(a5)<-rep("",nrow(a5))
         ##
 }
+```
 
+## Example using mtcars database
+###Put dependent variable in first column 
+```{r}
 
-BestFitVar(mtcars,4,2)
-BestFitVar(mtcars,4,1)
+BestFitVar(mtcars,4,1)  ##Adusted R squared criteria
+BestFitVar(mtcars,4,2)  ##Pvalue criteria
 ```
 
 ## Example using diamonds database (part of ggplot2)
 
 ###Put dependent variable in first column and remove unwanted variables (x,y,z)
+
 ```{r setup}
-library(ggplot2)
-library(dplyr)
+
 d1<-tbl_df(diamonds)
 d2<-select(d1,price,carat:table) ## price first column
 d2<-as.data.frame(d2)
 
 ###next put in function x=database,y=numberof best variables you want to find
-BestFitVar(d2,4,1)
+BestFitVar(d2,4,2) ##Pvalue criteria
+BestFitVar(d2,4,1) ##Adusted R squared criteria
 ```
+
 ## Example using airquality database - no prep is required
+###Put dependent variable in first column
+
 ```{r}
-BestFitVar(airquality,4,1)
-BestFitVar(airquality,4,2)
+BestFitVar(airquality,4,2) ##Pvalue criteria
+BestFitVar(airquality,4,1)##Adusted R squared criteria
 ```
 
 
 ##``
 ## Example using state database
+###Put dependent variable in first column 
 
 ```{r}
 state<-as.data.frame(state.x77)
-BestFitVar(state,5,1)
-BestFitVar(state,5,2)
+BestFitVar(state,5,2) ##Pvalue criteria
+BestFitVar(state,5,1)##Adusted R squared criteria
 ```
 
 
