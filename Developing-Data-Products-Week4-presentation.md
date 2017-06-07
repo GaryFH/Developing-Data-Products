@@ -1,20 +1,20 @@
 Developing-Data-Products-Week4-presentation
 ========================================================
-author: GaryFH
+author: GaryFH 
 date: 05/27/2017
 autosize: true
 
+
 BestFit Shiny Application  Find Best Predictor Variables
 ========================================================
-
 - Introduction
 
 This application uses four different databases available from R programming language and uses two different statistical methods to predict the conditional variable.  A basic understanding of statistical methods is required to understand the output.
 
-
 - Methods
 
 The application uses a linear model to the best regressors for predicting the conditional varible. The table contains the information about the best regressors and the conditional variable is also displayed.   Note that the code is easy to modify to change or add databases.   It can also be easily modified to add or change criteria used for selecting the best available regressors.
+- https://github.com/GaryFH/Developing-Data-Products
 
 Example of embedded R code that gets run presenting the document
 ========================================================

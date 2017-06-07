@@ -130,85 +130,76 @@ $(document).ready(function () {
 <div id="x-database-y-number-of-best-regressors-you-want-to-find-z-if-1-then-adusted-r-squared-is-criteria-for-choosing-the-best-regressors---any-other-value-for-z-means-pvalue-is-the-criteria-method" class="section level3">
 <h3>x= database, y= number of best regressors you want to find, z= if 1 then Adusted R squared is criteria for choosing the best regressors - any other value for z means Pvalue is the criteria method</h3>
 <pre class="r"><code>library(caret);library(dplyr);library(ggplot2)</code></pre>
-<pre class="r"><code>BestFitVar&lt;-function(x,y,z) {
-         
-         
-## Remove near zero and mostly NA variables - Near zero only works if all variables are numeric!
-
-                        ## nza&lt;-nearZeroVar(x) - 
-                        ## x&lt;-x[,-nza]
-        mostNA&lt;-sapply(x, function(x) mean(is.na(x)))&gt;=.95
-        x&lt;-x[,mostNA==F]
-
-## Remove dependent variable from potential regressors                
-        x1&lt;-x[,-1]
-        
-## Insure that the number of good regressors wanted does not exceed the number available
-        
-                NumOfRegressors&lt;-ncol(x1)
+<pre class="r"><code>BestFit&lt;-function(x,y,z) {               
+            x1&lt;-x[,-1]
+            
+            ## Insure that the number of good regressors wanted does not exceed the number available
+            
+            NumOfRegressors&lt;-ncol(x1)
             if(NumOfRegressors&lt;y) stop(&quot;there are less than (y) regressors&quot;)
-                pval&lt;-numeric(NumOfRegressors)
-                AdjR&lt;-numeric(NumOfRegressors)
-## Find best regressors (those with lowest P-values)
-
+            pval&lt;-numeric(NumOfRegressors)
+            AdjR&lt;-numeric(NumOfRegressors)
+            
+            ## Find best regressors (those with lowest P-values)
+            
             for(i in seq_len(NumOfRegressors)) {
-                fit&lt;-lm(x[,1]~x1[,i])
-                s&lt;-summary(fit)
-                pval[i]&lt;-s$coefficients[2,4]
-                AdjR[i]&lt;-s$adj.r.squared
-                        #print(names(s))
-                        #print(s)
-                        #print(class(pval))
-                        #print(pval)
-                        #regname&lt;-names(x1)
-                        #print(regname)
-              }
-## make new data.frame by removing extra regressors 
-        if(z==1){criteria&lt;-AdjR}
-        if(!z==1){criteria&lt;-pval} 
-                
-        LowToHigh &lt;- order(criteria)
-        LowToHigh&lt;- LowToHigh[1:y]
-        xLowval&lt;-x1[,(LowToHigh)]
-        Regressor_lowest&lt;-names(xLowval)
-                        #print(LowToHigh)
-                        #print(names(xLow))
-                        #print(a1)
-                
- #prepare and print
-                                
-        AdjustedRSquared&lt;-round(AdjR[LowToHigh],4)
-        Pvalues&lt;-signif(pval[LowToHigh],4)
-                a1&lt;-table(Regressor_lowest,AdjustedRSquared,Pvalues)
-                a2&lt;-tbl_df(a1)
-                a2$Pvalues&lt;-as.numeric(a2$Pvalues)
-                a2$AdjustedRSquared&lt;-as.numeric(a2$AdjustedRSquared)
-                a3&lt;-filter(a2,n&gt;0)
-                a4&lt;-select(a3,-n)
-                ##a4&lt;-arrange(a4,Pvalues)
-                a5&lt;-as.matrix(a4)
-                print(a5,quote = F)
-                rownames(a5)&lt;-rep(&quot;&quot;,nrow(a5))
-        ##
-}</code></pre>
+                    fit&lt;-lm(x[,1]~x1[,i])
+                    s&lt;-summary(fit)
+                    pval[i]&lt;-s$coefficients[2,4]
+                    AdjR[i]&lt;-s$adj.r.squared
+                    
+                    ifelse(z==1,criteria&lt;-AdjR,criteria&lt;-pval)                        }
+            #if(z==1){criteria&lt;-AdjR}
+            #if(!z==1){criteria&lt;-pval}                            
+            LowToHigh &lt;- order(criteria)
+            LowToHigh&lt;- LowToHigh[1:y]
+            xLowval&lt;-x1[,(LowToHigh)]
+            HighToLow&lt;-order(-criteria)
+            HighToLow&lt;-HighToLow[1:y]
+            xHighval&lt;-x1[,(HighToLow)]
+            Regressor_lowest&lt;-names(xLowval)
+            Regressor_highest&lt;-names(xHighval)
+            AdjustedRSquaredH&lt;-round(AdjR[HighToLow],4)
+            PvaluesH&lt;-signif(pval[HighToLow],4)
+            AdjustedRSquaredL&lt;-round(AdjR[LowToHigh],4)
+            PvaluesL&lt;-signif(pval[LowToHigh],4)
+            aa1&lt;-table(Regressor_lowest,AdjustedRSquaredL,PvaluesL) 
+            aa2&lt;-table(Regressor_highest,AdjustedRSquaredH,PvaluesH)
+            aa3&lt;-tbl_df(aa1)
+            aa3&lt;-filter(aa3,n&gt;0)
+            aa3&lt;-select(aa3,-n)
+            aa4&lt;-tbl_df(aa2)
+            aa4&lt;-filter(aa4,n&gt;0)
+            aa4&lt;-select(aa4,-n)
+            aa3$PvaluesL&lt;-as.numeric(aa3$PvaluesL)
+            aa3$AdjustedRSquaredL&lt;-as.numeric(aa3$AdjustedRSquaredL)
+            aa4$PvaluesH&lt;-as.numeric(aa4$PvaluesH)
+            aa4$AdjustedRSquaredH&lt;-as.numeric(aa4$AdjustedRSquaredH)
+            aa5low&lt;-as.data.frame(aa3)
+            aa5high&lt;-as.data.frame(aa4)
+            ifelse(z==1,aa5&lt;-aa5high,aa5&lt;-aa5low)
+            aa5
+            ##print(aa5)
+            ##print(s)
+    }</code></pre>
 </div>
 </div>
 <div id="example-using-mtcars-database" class="section level2">
 <h2>Example using mtcars database</h2>
 <div id="put-dependent-variable-in-first-column" class="section level3">
 <h3>Put dependent variable in first column</h3>
-<pre class="r"><code>BestFitVar(mtcars,4,1)  ##Adusted R squared criteria</code></pre>
-<pre><code>##      Regressor_lowest AdjustedRSquared Pvalues 
-## [1,] am               0.3385           0.000285
-## [2,] carb             0.2803           0.001084
-## [3,] gear             0.2050           0.005401
-## [4,] qsec             0.1478           0.017080</code></pre>
-<pre class="r"><code>BestFitVar(mtcars,4,2)  ##Pvalue criteria</code></pre>
-<pre><code>##      Regressor_lowest AdjustedRSquared Pvalues  
-## [1,] wt               0.7446           1.294e-10
-## [2,] cyl              0.7171           6.113e-10
-## [3,] disp             0.7090           9.380e-10
-## [4,] hp               0.5892           1.788e-07</code></pre>
+<pre class="r"><code>BestFit(mtcars,4,1)  ##Adusted R squared criteria</code></pre>
+<pre><code>##   Regressor_highest AdjustedRSquaredH  PvaluesH
+## 1                wt            0.7446 1.294e-10
+## 2               cyl            0.7171 6.113e-10
+## 3              disp            0.7090 9.380e-10
+## 4                hp            0.5892 1.788e-07</code></pre>
+<pre class="r"><code>BestFit(mtcars,4,2)  ##Pvalue criteria</code></pre>
+<pre><code>##   Regressor_lowest AdjustedRSquaredL  PvaluesL
+## 1               wt            0.7446 1.294e-10
+## 2              cyl            0.7171 6.113e-10
+## 3             disp            0.7090 9.380e-10
+## 4               hp            0.5892 1.788e-07</code></pre>
 </div>
 </div>
 <div id="example-using-diamonds-database-part-of-ggplot2" class="section level2">
@@ -220,36 +211,36 @@ d2&lt;-select(d1,price,carat:table) ## price first column
 d2&lt;-as.data.frame(d2)
 
 ###next put in function x=database,y=numberof best variables you want to find
-BestFitVar(d2,4,2) ##Pvalue criteria</code></pre>
-<pre><code>##      Regressor_lowest AdjustedRSquared Pvalues   
-## [1,] carat            0.8493            0.000e+00
-## [2,] color            0.0312           1.338e-300
-## [3,] table            0.0161           3.762e-193
-## [4,] clarity          0.0270            4.696e-68</code></pre>
-<pre class="r"><code>BestFitVar(d2,4,1) ##Adusted R squared criteria</code></pre>
-<pre><code>##      Regressor_lowest AdjustedRSquared Pvalues   
-## [1,] table            0.0161           3.762e-193
-## [2,] clarity          0.0270            4.696e-68
-## [3,] cut              0.0128            9.803e-08
-## [4,] depth            0.0001            1.340e-02</code></pre>
+BestFit(d2,4,2) ##Pvalue criteria</code></pre>
+<pre><code>##   Regressor_lowest AdjustedRSquaredL   PvaluesL
+## 1            carat            0.8493  0.000e+00
+## 2            color            0.0312 1.338e-300
+## 3            table            0.0161 3.762e-193
+## 4          clarity            0.0270  4.696e-68</code></pre>
+<pre class="r"><code>BestFit(d2,4,1) ##Adusted R squared criteria</code></pre>
+<pre><code>##   Regressor_highest AdjustedRSquaredH   PvaluesH
+## 1             carat            0.8493  0.000e+00
+## 2             color            0.0312 1.338e-300
+## 3             table            0.0161 3.762e-193
+## 4           clarity            0.0270  4.696e-68</code></pre>
 </div>
 </div>
 <div id="example-using-airquality-database---no-prep-is-required" class="section level2">
 <h2>Example using airquality database - no prep is required</h2>
 <div id="put-dependent-variable-in-first-column-1" class="section level3">
 <h3>Put dependent variable in first column</h3>
-<pre class="r"><code>BestFitVar(airquality,4,2) ##Pvalue criteria</code></pre>
-<pre><code>##      Regressor_lowest AdjustedRSquared Pvalues  
-## [1,] Temp             0.4832           2.932e-18
-## [2,] Wind             0.3563           9.272e-13
-## [3,] Solar.R          0.1133           1.793e-04
-## [4,] Month            0.0185           7.760e-02</code></pre>
-<pre class="r"><code>BestFitVar(airquality,4,1)##Adusted R squared criteria</code></pre>
-<pre><code>##      Regressor_lowest AdjustedRSquared Pvalues  
-## [1,] Wind              0.3563          9.272e-13
-## [2,] Solar.R           0.1133          1.793e-04
-## [3,] Month             0.0185          7.760e-02
-## [4,] Day              -0.0086          8.879e-01</code></pre>
+<pre class="r"><code>BestFit(airquality,4,2) ##Pvalue criteria</code></pre>
+<pre><code>##   Regressor_lowest AdjustedRSquaredL  PvaluesL
+## 1             Temp            0.4832 2.932e-18
+## 2             Wind            0.3563 9.272e-13
+## 3          Solar.R            0.1133 1.793e-04
+## 4            Month            0.0185 7.760e-02</code></pre>
+<pre class="r"><code>BestFit(airquality,4,1)##Adusted R squared criteria</code></pre>
+<pre><code>##   Regressor_highest AdjustedRSquaredH  PvaluesH
+## 1              Temp            0.4832 2.932e-18
+## 2              Wind            0.3563 9.272e-13
+## 3           Solar.R            0.1133 1.793e-04
+## 4             Month            0.0185 7.760e-02</code></pre>
 </div>
 </div>
 <div id="section" class="section level2">
@@ -260,20 +251,20 @@ BestFitVar(d2,4,2) ##Pvalue criteria</code></pre>
 <div id="put-dependent-variable-in-first-column-2" class="section level3">
 <h3>Put dependent variable in first column</h3>
 <pre class="r"><code>state&lt;-as.data.frame(state.x77)
-BestFitVar(state,5,2) ##Pvalue criteria</code></pre>
-<pre><code>##      Regressor_lowest AdjustedRSquared Pvalues
-## [1,] Murder            0.0997          0.01455
-## [2,] Frost             0.0918          0.01844
-## [3,] Income            0.0234          0.14670
-## [4,] Illiteracy       -0.0090          0.45690
-## [5,] HS Grad          -0.0109          0.49620</code></pre>
-<pre class="r"><code>BestFitVar(state,5,1)##Adusted R squared criteria</code></pre>
-<pre><code>##      Regressor_lowest AdjustedRSquared Pvalues
-## [1,] Income            0.0234          0.1467 
-## [2,] Illiteracy       -0.0090          0.4569 
-## [3,] HS Grad          -0.0109          0.4962 
-## [4,] Life Exp         -0.0161          0.6387 
-## [5,] Area             -0.0203          0.8765</code></pre>
+BestFit(state,5,2) ##Pvalue criteria</code></pre>
+<pre><code>##   Regressor_lowest AdjustedRSquaredL PvaluesL
+## 1           Murder            0.0997  0.01455
+## 2            Frost            0.0918  0.01844
+## 3           Income            0.0234  0.14670
+## 4       Illiteracy           -0.0090  0.45690
+## 5          HS Grad           -0.0109  0.49620</code></pre>
+<pre class="r"><code>BestFit(state,5,1)##Adusted R squared criteria</code></pre>
+<pre><code>##   Regressor_highest AdjustedRSquaredH PvaluesH
+## 1            Murder            0.0997  0.01455
+## 2             Frost            0.0918  0.01844
+## 3            Income            0.0234  0.14670
+## 4        Illiteracy           -0.0090  0.45690
+## 5           HS Grad           -0.0109  0.49620</code></pre>
 </div>
 </div>
 
